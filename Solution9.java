@@ -1,6 +1,4 @@
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * @description:
@@ -39,31 +37,57 @@ import java.util.List;
 class Solution9 {
 
     public boolean possibleBipartition(int n, int[][] dislikes) {
-        int[] fa = new int[n + 1];
-        Arrays.fill(fa, -1);
         List<Integer>[] g = new List[n + 1];
-        for (int i = 0; i < n; ++i) {
-            g[i] = new ArrayList<Integer>();
+        for (int i = 1; i <= n; ++i) {
+            g[i] = new ArrayList<>();
         }
-        for (int[] p : dislikes)
+
+        // 构建邻接表
+        for (int[] p : dislikes) {
             g[p[0]].add(p[1]);
             g[p[1]].add(p[0]);
+        }
+
+        // 颜色数组，0: 未染色, 1: 组1, -1: 组2
+        int[] colors = new int[n + 1];
+
+        // 遍历每个人
         for (int i = 1; i <= n; ++i) {
-            for (int j = 0; j < g[i].size(); ++j) {
-                unit(g[i].get(0), g[i].get(j), fa);
-                if (isconnect(i, g[i].get(j), fa)) {
-                    return false;
+            if (colors[i] == 0) { // 还未访问
+                if (!bfs(i, 1, g, colors)) { // 从未访问的节点开始 BFS
+                    return false; // 如果发现冲突，返回 false
                 }
             }
         }
-        return true;
+        return true; // 所有人都可以被分成两组
+    }
+
+    private boolean bfs(int start, int color, List<Integer>[] g, int[] colors) {
+        Queue<Integer> queue = new LinkedList<>();
+        queue.offer(start);
+        colors[start] = color; // 将起始节点染为组1
+
+        while (!queue.isEmpty()) {
+            int current = queue.poll();
+
+            for (int neighbor : g[current]) {
+                if (colors[neighbor] == 0) { // 如果邻居未被染色
+                    colors[neighbor] = -colors[current]; // 给邻居染上相反的颜色
+                    queue.offer(neighbor);
+                } else if (colors[neighbor] == colors[current]) {
+                    return false; // 如果邻居与当前节点颜色相同，返回 false
+                }
+            }
+        }
+
+        return true; // BFS 完成，未发现冲突
     }
 
     public void unit(int x, int y, int[] fa) {
         x = findFa(x, fa);
         y = findFa(y, fa);
         if (x == y) {
-            return ;
+            return;
         }
         if (fa[x] <= fa[y]) {
             int temp = x;
@@ -81,6 +105,6 @@ class Solution9 {
     }
 
     public int findFa(int x, int[] fa) {
-        return fa[x] > 0 ? x : (fa[x] = findFa(fa[x], fa));
+        return fa[x] < 0 ? x : (fa[x] = findFa(fa[x], fa));
     }
 }
